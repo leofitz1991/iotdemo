@@ -1,0 +1,673 @@
+{
+  "ruleChain": {
+    "name": "Root Rule Chain",
+    "type": "CORE",
+    "firstRuleNodeId": null,
+    "root": false,
+    "debugMode": false,
+    "configuration": null,
+    "additionalInfo": null
+  },
+  "metadata": {
+    "version": 7,
+    "firstNodeIndex": 0,
+    "nodes": [
+      {
+        "type": "org.thingsboard.rule.engine.filter.TbMsgTypeSwitchNode",
+        "name": "Message Type Switch",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {},
+        "additionalInfo": {
+          "layoutX": 300,
+          "layoutY": 250
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.telemetry.TbMsgTimeseriesNode",
+        "name": "Save Timeseries",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 1,
+        "configuration": {
+          "defaultTTL": 0,
+          "useServerTs": false,
+          "processingSettings": {
+            "type": "ON_EVERY_MESSAGE"
+          }
+        },
+        "additionalInfo": {
+          "layoutX": 580,
+          "layoutY": 200
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.telemetry.TbMsgAttributesNode",
+        "name": "Save Client Attributes",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 3,
+        "configuration": {
+          "scope": "CLIENT_SCOPE",
+          "notifyDevice": false,
+          "sendAttributesUpdatedNotification": false,
+          "updateAttributesOnlyOnValueChange": true,
+          "processingSettings": {
+            "type": "ON_EVERY_MESSAGE"
+          }
+        },
+        "additionalInfo": {
+          "layoutX": 580,
+          "layoutY": 340
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.filter.TbJsSwitchNode",
+        "name": "Air Quality & Multi-Actuator Decision",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "TBEL",
+          "tbelScript": "\nvar routes = [];\nvar co2 = msg.co2 != null ? msg.co2 : 0;\nvar pm25 = msg.pm25 != null ? msg.pm25 : 0;\nvar aqi = msg.air_quality != null ? msg.air_quality : 0;\nvar temp = msg.temperature != null ? msg.temperature : 0;\nvar hum = msg.humidity != null ? msg.humidity : 0;\n\n// === 1. Quat thong gio (Ventilation Fan - Green LED) -> Giam CO2 ===\nif (co2 > 1000) {\n    routes.push('FanOn');\n} else if (co2 <= 800) {\n    routes.push('FanOff');\n}\n\n// === 2. May loc khong khi HEPA (Air Purifier - Blue LED) -> Khu PM2.5 & Bui min, VOC ===\nif (pm25 > 35.4 || aqi > 100) {\n    routes.push('PurifierOn');\n} else if (pm25 <= 25.0 && aqi <= 75) {\n    routes.push('PurifierOff');\n}\n\n// === 3. May lam mat / Dieu hoa (Cooler / AC - Yellow LED) -> Ha nhiet do ===\nif (temp > 32.0) {\n    routes.push('CoolerOn');\n} else if (temp <= 28.0) {\n    routes.push('CoolerOff');\n}\n\n// === 4. May tao am / Phun suong (Humidifier / Mist - Orange LED) -> Tang do am khi kho ===\nif (hum < 40.0) {\n    routes.push('HumidifierOn');\n} else if (hum >= 55.0) {\n    routes.push('HumidifierOff');\n}\n\n// === 5. Coi hu & Den bao dong do (Buzzer & Alert - Red LED) -> Canh bao khan cap ===\nif (co2 > 2000 || aqi > 200 || pm25 > 125.4 || temp > 45.0) {\n    routes.push('BuzzerOn');\n} else if (co2 <= 1500 && aqi <= 150 && pm25 <= 55.4 && temp <= 40.0) {\n    routes.push('BuzzerOff');\n}\n\n// === 6. He thong tao & xoa Alarms tren ThingsBoard Dashboard ===\n// CO2 Alarms\nif (co2 > 2000) {\n    routes.push('Co2Critical');\n} else if (co2 > 1000) {\n    routes.push('Co2Warning');\n} else if (co2 <= 850) {\n    routes.push('Co2Normal');\n}\n\n// Air Quality / PM2.5 Alarms\nif (aqi > 200 || pm25 > 125.4) {\n    routes.push('AqiHazardous');\n} else if (aqi > 150 || pm25 > 55.4) {\n    routes.push('AqiPoor');\n} else if (aqi <= 100 && pm25 <= 35.4) {\n    routes.push('AqiNormal');\n}\n\n// Temperature Alarms\nif (temp > 38.0) {\n    routes.push('TempWarning');\n} else if (temp <= 35.0) {\n    routes.push('TempNormal');\n}\n\n// Humidity Alarms\nif (hum < 35.0) {\n    routes.push('HumidityLow');\n} else if (hum >= 45.0) {\n    routes.push('HumidityNormal');\n}\n\nreturn routes;\n"
+        },
+        "additionalInfo": {
+          "layoutX": 880,
+          "layoutY": 200
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.action.TbCreateAlarmNode",
+        "name": "Create Alarm: CO2 High",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "alarmType": "CO2_HIGH_WARNING",
+          "severity": "WARNING",
+          "scriptLang": "TBEL",
+          "alarmDetailsBuildTbel": "var d = {}; d.message = 'Nồng độ CO2 vượt ngưỡng an toàn: ' + msg.co2 + ' ppm (> 1000 ppm)'; d.action = 'Kích hoạt quạt thông gió (Fan ON)'; return d;",
+          "propagate": false,
+          "propagateToOwner": false,
+          "propagateToTenant": false,
+          "useMessageAlarmData": false,
+          "overwriteAlarmDetails": false,
+          "dynamicSeverity": false,
+          "relationTypes": []
+        },
+        "additionalInfo": {
+          "layoutX": 1400,
+          "layoutY": 20
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.action.TbCreateAlarmNode",
+        "name": "Create Alarm: CO2 Critical",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "alarmType": "CO2_CRITICAL_DANGER",
+          "severity": "CRITICAL",
+          "scriptLang": "TBEL",
+          "alarmDetailsBuildTbel": "var d = {}; d.message = 'NGUY HIỂM: Nồng độ CO2 đạt mức ngạt khí ' + msg.co2 + ' ppm (> 2000 ppm)'; d.action = 'BẬT CÒI BÁO ĐỘNG & QUẠT CÔNG SUẤT CAO'; return d;",
+          "propagate": false,
+          "propagateToOwner": false,
+          "propagateToTenant": false,
+          "useMessageAlarmData": false,
+          "overwriteAlarmDetails": false,
+          "dynamicSeverity": false,
+          "relationTypes": []
+        },
+        "additionalInfo": {
+          "layoutX": 1400,
+          "layoutY": 80
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.action.TbClearAlarmNode",
+        "name": "Clear Alarm: CO2 Normal",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "alarmType": "CO2_HIGH_WARNING",
+          "scriptLang": "TBEL",
+          "alarmDetailsBuildTbel": "var d = {}; d.message = 'CO2 đã trở lại mức an toàn: ' + msg.co2 + ' ppm'; return d;"
+        },
+        "additionalInfo": {
+          "layoutX": 1400,
+          "layoutY": 140
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.action.TbCreateAlarmNode",
+        "name": "Create Alarm: Poor Air Quality",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "alarmType": "POOR_AIR_QUALITY",
+          "severity": "WARNING",
+          "scriptLang": "TBEL",
+          "alarmDetailsBuildTbel": "var d = {}; d.message = 'Chất lượng không khí kém (AQI=' + msg.air_quality + ', PM2.5=' + msg.pm25 + ' µg/m³)'; d.action = 'Kích hoạt máy lọc không khí HEPA (Purifier ON)'; return d;",
+          "propagate": false,
+          "propagateToOwner": false,
+          "propagateToTenant": false,
+          "useMessageAlarmData": false,
+          "overwriteAlarmDetails": false,
+          "dynamicSeverity": false,
+          "relationTypes": []
+        },
+        "additionalInfo": {
+          "layoutX": 1400,
+          "layoutY": 200
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.action.TbCreateAlarmNode",
+        "name": "Create Alarm: Hazardous Air",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "alarmType": "HAZARDOUS_AIR_QUALITY",
+          "severity": "CRITICAL",
+          "scriptLang": "TBEL",
+          "alarmDetailsBuildTbel": "var d = {}; d.message = 'BÁO ĐỘNG ĐỎ: Không khí ô nhiễm nguy hại cấp độ khẩn cấp (AQI=' + msg.air_quality + ', PM2.5=' + msg.pm25 + ' µg/m³)'; return d;",
+          "propagate": false,
+          "propagateToOwner": false,
+          "propagateToTenant": false,
+          "useMessageAlarmData": false,
+          "overwriteAlarmDetails": false,
+          "dynamicSeverity": false,
+          "relationTypes": []
+        },
+        "additionalInfo": {
+          "layoutX": 1400,
+          "layoutY": 260
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.action.TbClearAlarmNode",
+        "name": "Clear Alarm: Air Quality Normal",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "alarmType": "POOR_AIR_QUALITY",
+          "scriptLang": "TBEL",
+          "alarmDetailsBuildTbel": "var d = {}; d.message = 'Chất lượng không khí đã sạch và an toàn (AQI=' + msg.air_quality + ')'; return d;"
+        },
+        "additionalInfo": {
+          "layoutX": 1400,
+          "layoutY": 320
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.action.TbCreateAlarmNode",
+        "name": "Create Alarm: High Temperature",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "alarmType": "HIGH_TEMPERATURE",
+          "severity": "WARNING",
+          "scriptLang": "TBEL",
+          "alarmDetailsBuildTbel": "var d = {}; d.message = 'Nhiệt độ phòng tăng cao: ' + msg.temperature + ' °C'; d.action = 'Kích hoạt điều hòa / máy làm mát (Cooler ON)'; return d;",
+          "propagate": false,
+          "propagateToOwner": false,
+          "propagateToTenant": false,
+          "useMessageAlarmData": false,
+          "overwriteAlarmDetails": false,
+          "dynamicSeverity": false,
+          "relationTypes": []
+        },
+        "additionalInfo": {
+          "layoutX": 1400,
+          "layoutY": 380
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.action.TbClearAlarmNode",
+        "name": "Clear Alarm: Temp Normal",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "alarmType": "HIGH_TEMPERATURE",
+          "scriptLang": "TBEL",
+          "alarmDetailsBuildTbel": "var d = {}; d.message = 'Nhiệt độ đã trở lại ngưỡng dễ chịu: ' + msg.temperature + ' °C'; return d;"
+        },
+        "additionalInfo": {
+          "layoutX": 1400,
+          "layoutY": 440
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.action.TbCreateAlarmNode",
+        "name": "Create Alarm: Low Humidity",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "alarmType": "LOW_HUMIDITY",
+          "severity": "WARNING",
+          "scriptLang": "TBEL",
+          "alarmDetailsBuildTbel": "var d = {}; d.message = 'Độ ẩm không khí quá thấp: ' + msg.humidity + ' % (< 35%) gây khô da & kích ứng hô hấp'; d.action = 'Kích hoạt máy phun sương bù ẩm (Humidifier ON)'; return d;",
+          "propagate": false,
+          "propagateToOwner": false,
+          "propagateToTenant": false,
+          "useMessageAlarmData": false,
+          "overwriteAlarmDetails": false,
+          "dynamicSeverity": false,
+          "relationTypes": []
+        },
+        "additionalInfo": {
+          "layoutX": 1400,
+          "layoutY": 500
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.action.TbClearAlarmNode",
+        "name": "Clear Alarm: Humidity Normal",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "alarmType": "LOW_HUMIDITY",
+          "scriptLang": "TBEL",
+          "alarmDetailsBuildTbel": "var d = {}; d.message = 'Độ ẩm không khí đã cân bằng: ' + msg.humidity + ' %'; return d;"
+        },
+        "additionalInfo": {
+          "layoutX": 1400,
+          "layoutY": 560
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "Gen RPC: Fan ON",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "TBEL",
+          "tbelScript": "\nvar rpc = {\n    method: \"setFan\",\n    params: true,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
+        },
+        "additionalInfo": {
+          "layoutX": 1401,
+          "layoutY": 678
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "Gen RPC: Fan OFF",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "TBEL",
+          "tbelScript": "\nvar rpc = {\n    method: \"setFan\",\n    params: false,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
+        },
+        "additionalInfo": {
+          "layoutX": 1401,
+          "layoutY": 738
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "Gen RPC: Purifier ON",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "TBEL",
+          "tbelScript": "\nvar rpc = {\n    method: \"setPurifier\",\n    params: true,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
+        },
+        "additionalInfo": {
+          "layoutX": 1401,
+          "layoutY": 798
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "Gen RPC: Purifier OFF",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "TBEL",
+          "tbelScript": "\nvar rpc = {\n    method: \"setPurifier\",\n    params: false,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
+        },
+        "additionalInfo": {
+          "layoutX": 1401,
+          "layoutY": 858
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "Gen RPC: Cooler ON",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "TBEL",
+          "tbelScript": "\nvar rpc = {\n    method: \"setCooler\",\n    params: true,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
+        },
+        "additionalInfo": {
+          "layoutX": 1401,
+          "layoutY": 918
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "Gen RPC: Cooler OFF",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "TBEL",
+          "tbelScript": "\nvar rpc = {\n    method: \"setCooler\",\n    params: false,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
+        },
+        "additionalInfo": {
+          "layoutX": 1401,
+          "layoutY": 978
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "Gen RPC: Humidifier ON",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "TBEL",
+          "tbelScript": "\nvar rpc = {\n    method: \"setHumidifier\",\n    params: true,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
+        },
+        "additionalInfo": {
+          "layoutX": 1401,
+          "layoutY": 1038
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "Gen RPC: Humidifier OFF",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "TBEL",
+          "tbelScript": "\nvar rpc = {\n    method: \"setHumidifier\",\n    params: false,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
+        },
+        "additionalInfo": {
+          "layoutX": 1401,
+          "layoutY": 1098
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "Gen RPC: Buzzer ON",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "TBEL",
+          "tbelScript": "\nvar rpc = {\n    method: \"setBuzzer\",\n    params: true,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
+        },
+        "additionalInfo": {
+          "layoutX": 1401,
+          "layoutY": 1158
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "Gen RPC: Buzzer OFF",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "TBEL",
+          "tbelScript": "\nvar rpc = {\n    method: \"setBuzzer\",\n    params: false,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
+        },
+        "additionalInfo": {
+          "layoutX": 1401,
+          "layoutY": 1218
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.rpc.TbSendRPCRequestNode",
+        "name": "RPC Call to Device",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "timeoutInSeconds": 30
+        },
+        "additionalInfo": {
+          "layoutX": 1778,
+          "layoutY": 928
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.action.TbLogNode",
+        "name": "Log RPC Result",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "TBEL",
+          "tbelScript": "return 'RPC to device ' + metadata.deviceName + ' result: ' + JSON.stringify(msg);"
+        },
+        "additionalInfo": {
+          "layoutX": 1779,
+          "layoutY": 812
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromIndex": 0,
+        "toIndex": 1,
+        "type": "Post telemetry"
+      },
+      {
+        "fromIndex": 0,
+        "toIndex": 2,
+        "type": "Post attributes"
+      },
+      {
+        "fromIndex": 1,
+        "toIndex": 3,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 4,
+        "type": "Co2Warning"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 5,
+        "type": "Co2Critical"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 6,
+        "type": "Co2Normal"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 7,
+        "type": "AqiPoor"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 8,
+        "type": "AqiHazardous"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 9,
+        "type": "AqiNormal"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 10,
+        "type": "TempWarning"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 11,
+        "type": "TempNormal"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 12,
+        "type": "HumidityLow"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 13,
+        "type": "HumidityNormal"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 14,
+        "type": "FanOn"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 15,
+        "type": "FanOff"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 16,
+        "type": "PurifierOn"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 17,
+        "type": "PurifierOff"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 18,
+        "type": "CoolerOn"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 19,
+        "type": "CoolerOff"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 20,
+        "type": "HumidifierOn"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 21,
+        "type": "HumidifierOff"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 22,
+        "type": "BuzzerOn"
+      },
+      {
+        "fromIndex": 3,
+        "toIndex": 23,
+        "type": "BuzzerOff"
+      },
+      {
+        "fromIndex": 14,
+        "toIndex": 24,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 15,
+        "toIndex": 24,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 16,
+        "toIndex": 24,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 17,
+        "toIndex": 24,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 18,
+        "toIndex": 24,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 19,
+        "toIndex": 24,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 20,
+        "toIndex": 24,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 21,
+        "toIndex": 24,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 22,
+        "toIndex": 24,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 23,
+        "toIndex": 24,
+        "type": "Success"
+      },
+      {
+        "fromIndex": 24,
+        "toIndex": 25,
+        "type": "Failure"
+      },
+      {
+        "fromIndex": 24,
+        "toIndex": 25,
+        "type": "Success"
+      }
+    ],
+    "ruleChainConnections": null
+  }
+}
