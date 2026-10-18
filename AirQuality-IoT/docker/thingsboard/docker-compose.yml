@@ -1,0 +1,43 @@
+name: airquality-iot
+
+# ThingsBoard CE + PostgreSQL (theo huong dan Docker chinh thuc cua ThingsBoard)
+# Khoi tao lan dau: docker compose -p airquality-iot run --rm -e INSTALL_TB=true -e LOAD_DEMO=true thingsboard-ce
+# Chay:            docker compose -p airquality-iot up -d
+services:
+  postgres:
+    image: postgres:18
+    restart: always
+    environment:
+      POSTGRES_DB: thingsboard
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - tb-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d thingsboard"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  thingsboard-ce:
+    image: thingsboard/tb-node:4.3.1.6
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"   # Web UI + REST API
+      - "1883:1883"   # MQTT (ESP32 tren Wokwi ket noi vao day)
+    environment:
+      TB_SERVICE_ID: tb-ce-node
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/thingsboard
+      SPRING_DATASOURCE_PASSWORD: postgres
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+        max-file: "10"
+
+volumes:
+  tb-postgres-data:
+

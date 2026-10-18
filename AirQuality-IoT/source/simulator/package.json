@@ -1,0 +1,14 @@
+{
+  "name": "aq-load-simulator",
+  "version": "1.0.0",
+  "description": "Simulator nhieu thiet bi do chat luong khong khi - thu tai ThingsBoard / MQTT broker",
+  "type": "module",
+  "main": "simulator.mjs",
+  "scripts": {
+    "start": "node simulator.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "mqtt": "^5.16.1"
+  }
+}

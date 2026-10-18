@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "author": "Nhom Air Quality IoT - So Do Mach Chuan Dien Tu IIAF",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 96, "left": 81.64, "attrs": {} },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": -210.9,
+      "left": -130.2,
+      "attrs": { "temperature": "28.5", "humidity": "65" }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "potCo2",
+      "top": -212.5,
+      "left": 9.4,
+      "attrs": { "value": "100", "label": "CO2 (ADC34)" }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "potPm",
+      "top": -210,
+      "left": 230,
+      "attrs": { "value": "68", "label": "PM2.5 (ADC35)" }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz1",
+      "top": 117.6,
+      "left": -228.6,
+      "attrs": { "volume": "0.1" }
+    },
+    { "type": "wokwi-relay-module", "id": "relayFan", "top": 96.2, "left": 316.8, "attrs": {} },
+    { "type": "wokwi-resistor", "id": "r1", "top": 101, "left": 540, "attrs": { "value": "220" } },
+    {
+      "type": "wokwi-led",
+      "id": "ledFan",
+      "top": 65,
+      "left": 670,
+      "attrs": { "color": "green", "label": "FAN (CO2)", "flip": "1" }
+    },
+    { "type": "wokwi-resistor", "id": "r3", "top": 181, "left": 540, "attrs": { "value": "220" } },
+    {
+      "type": "wokwi-led",
+      "id": "ledPurifier",
+      "top": 145,
+      "left": 670,
+      "attrs": { "color": "blue", "label": "PURIFIER (PM2.5)", "flip": "1" }
+    },
+    { "type": "wokwi-resistor", "id": "r4", "top": 261, "left": 540, "attrs": { "value": "220" } },
+    {
+      "type": "wokwi-led",
+      "id": "ledCooler",
+      "top": 225,
+      "left": 670,
+      "attrs": { "color": "yellow", "label": "COOLER (TEMP)", "flip": "1" }
+    },
+    { "type": "wokwi-resistor", "id": "r5", "top": 341, "left": 540, "attrs": { "value": "220" } },
+    {
+      "type": "wokwi-led",
+      "id": "ledHumidifier",
+      "top": 305,
+      "left": 670,
+      "attrs": { "color": "orange", "label": "MIST (RH)", "flip": "1" }
+    },
+    { "type": "wokwi-resistor", "id": "r2", "top": 421, "left": 540, "attrs": { "value": "220" } },
+    {
+      "type": "wokwi-led",
+      "id": "ledAlert",
+      "top": 385,
+      "left": 670,
+      "attrs": { "color": "red", "label": "ALERT", "flip": "1" }
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "esp:3V3", "potCo2:VCC", "red", [ "h-28.65", "v-268.8" ] ],
+    [ "potCo2:VCC", "potPm:VCC", "red", [ "v81.5", "h220", "v-79" ] ],
+    [ "potCo2:VCC", "dht1:VCC", "red", [ "v81.5", "h-173.6", "v-33.5" ] ],
+    [ "esp:GND.1", "dht1:GND", "black", [ "h-172.65", "v-288" ] ],
+    [ "dht1:GND", "potCo2:GND", "black", [ "v56.7", "h134.6" ] ],
+    [ "potCo2:GND", "potPm:GND", "black", [ "v105.6", "h220.8", "v-103.1" ] ],
+    [ "potCo2:SIG", "esp:34", "orange", [ "v151.5", "h-0.4", "v155.7", "h38.25" ] ],
+    [ "potPm:SIG", "esp:35", "purple", [ "v122.3", "h-230.6", "v191.2", "h47.85" ] ],
+    [ "dht1:SDA", "esp:15", "green", [ "v165.1", "h340.5", "v199.7", "h-52.4" ] ],
+    [ "bz1:2", "esp:25", "brown", [ "h43", "h234.85" ] ],
+    [ "bz1:1", "esp:GND.1", "black", [ "v48", "h287.85" ] ],
+    [ "esp:5V", "relayFan:VCC", "red", [ "h-124.6", "v193.2", "h335", "v-375.6", "h20.15" ] ],
+    [ "esp:GND.2", "relayFan:GND", "black", [ "h34", "h100.4" ] ],
+    [ "esp:26", "relayFan:IN", "cyan", [ "h-39.6", "v129.6", "h260", "v-206.4", "h10.15" ] ],
+    [ "esp:3V3", "relayFan:COM", "red", [ "h-24.6", "v-39", "h425", "v39", "h-55.85" ] ],
+    [ "relayFan:NO", "r1:1", "green", [ "h80" ] ],
+    [ "r1:2", "ledFan:A", "green", [ "h86.2" ] ],
+    [ "esp:27", "r3:1", "blue", [ "h-47.85", "v150", "h463.25", "v-183.3", "h38.35" ] ],
+    [ "r3:2", "ledPurifier:A", "blue", [ "h86.2" ] ],
+    [ "esp:14", "r4:1", "gold", [ "h-79.6", "v170.4", "h505", "v-133.4", "h30" ] ],
+    [ "r4:2", "ledCooler:A", "gold", [ "h86.2" ] ],
+    [ "esp:13", "r5:1", "orange", [ "h-99.6", "v171.6", "h535", "v-83.4", "h20" ] ],
+    [ "r5:2", "ledHumidifier:A", "orange", [ "h86.2" ] ],
+    [ "esp:33", "r2:1", "red", [ "h-114.6", "v268.8", "h560", "v-33.4", "h10" ] ],
+    [ "r2:2", "ledAlert:A", "red", [ "h86.2" ] ],
+    [ "ledAlert:C", "ledHumidifier:C", "black", [ "h65", "v-80", "h-65" ] ],
+    [ "ledHumidifier:C", "ledCooler:C", "black", [ "h65", "v-80", "h-65" ] ],
+    [ "ledCooler:C", "ledPurifier:C", "black", [ "h65", "v-80", "h-65" ] ],
+    [ "ledPurifier:C", "ledFan:C", "black", [ "h65", "v-80", "h-65" ] ],
+    [ "ledFan:C", "esp:GND.2", "black", [ "h65", "v-117", "h-555", "v134", "h-24" ] ]
+  ],
+  "dependencies": {}
+}
