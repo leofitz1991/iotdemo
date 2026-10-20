@@ -2,7 +2,9 @@ name: airquality-iot
 
 # ThingsBoard CE + PostgreSQL (theo huong dan Docker chinh thuc cua ThingsBoard)
 # Khoi tao lan dau: docker compose -p airquality-iot run --rm -e INSTALL_TB=true -e LOAD_DEMO=true thingsboard-ce
-# Chay:            docker compose -p airquality-iot up -d
+# Chay ThingsBoard: docker compose -p airquality-iot up -d
+# InfluxDB opt-in:   docker compose --profile influx up -d influxdb
+# Writer opt-in:     docker compose --profile influx up -d influx-writer
 services:
   postgres:
     image: postgres:18
@@ -18,6 +20,56 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  influxdb:
+    image: influxdb:2.7
+    restart: always
+    profiles: ["influx"]
+    env_file:
+      - ./.env
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_ADMIN_USER:-airquality}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_ADMIN_PASSWORD:?Set INFLUXDB_ADMIN_PASSWORD in .env}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG:-airquality-iot}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET:-airquality}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN:?Set INFLUXDB_ADMIN_TOKEN in .env}
+    ports:
+      - "127.0.0.1:8086:8086" # InfluxDB UI/API accessible only from this host
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping", "--host", "http://localhost:8086"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  influx-writer:
+    image: node:22-alpine
+    restart: always
+    profiles: ["influx"]
+    env_file:
+      - ./.env
+    working_dir: /app
+    command: ["node", "influx_writer.mjs"]
+    volumes:
+      - ./influx_writer.mjs:/app/influx_writer.mjs:ro
+    environment:
+      PORT: 3000
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_ORG: ${INFLUXDB_ORG:-airquality-iot}
+      INFLUX_BUCKET: ${INFLUXDB_BUCKET:-airquality}
+      INFLUX_TOKEN: ${INFLUXDB_WRITE_TOKEN:?Create INFLUXDB_WRITE_TOKEN before starting influx-writer}
+      WRITER_API_TOKEN: ${WRITER_API_TOKEN:?Set WRITER_API_TOKEN in .env before starting influx-writer}
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   thingsboard-ce:
     image: thingsboard/tb-node:4.3.1.6
@@ -40,4 +92,6 @@ services:
 
 volumes:
   tb-postgres-data:
+  influxdb-data:
+  influxdb-config:
 

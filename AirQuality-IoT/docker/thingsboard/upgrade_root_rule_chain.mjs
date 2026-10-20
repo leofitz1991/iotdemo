@@ -1,3 +1,19 @@
+import { readFile as _readFile } from "node:fs/promises";
+import { resolve as _resolve, dirname as _dirname } from "node:path";
+import { fileURLToPath as _fileURLToPath } from "node:url";
+
+// Tu dong doc .env tu cung thu muc script (neu chua co trong process.env)
+async function loadDotEnv() {
+  const envPath = _resolve(_dirname(_fileURLToPath(import.meta.url)), ".env");
+  let text;
+  try { text = await _readFile(envPath, "utf8"); } catch { return; }
+  for (const line of text.split(/\r?\n/)) {
+    const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
+    if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+  }
+}
+await loadDotEnv();
+
 // Script nang cap Root Rule Chain ThingsBoard:
 // Closed-Loop Control cho 5 thiet bi chap hanh tuong ung voi 5 yeu to vi luong (theo bang so sanh):
 // 1. CO2                 -> Quat thong gio (Ventilation Fan - Green LED / Relay) -> setFan
@@ -7,25 +23,78 @@
 // 5. Nguy cap (Emergency)-> Coi hu & Den bao dong do (Buzzer & Alert - Red LED) -> setBuzzer
 
 async function main() {
-  const TB_URL = process.env.TB_URL || "http://localhost:8080";
+  const TB_URL = (process.env.TB_URL || "http://localhost:8080").replace(/\/$/, "");
+  const TB_USERNAME = process.env.TB_USERNAME;
+  const TB_PASSWORD = process.env.TB_PASSWORD;
+  const TB_FORCE = process.env.TB_FORCE === "true";
+  const APPLY = process.argv.includes("--apply");
+  const BACKUP_ONLY = process.argv.includes("--backup-only");
+  if (APPLY && BACKUP_ONLY) throw new Error("Choose either --backup-only or --apply, not both");
+  if (process.argv.some((arg) => arg.startsWith("--") && arg !== "--apply" && arg !== "--backup-only")) {
+    throw new Error("Supported options are --backup-only and --apply");
+  }
+  if (!TB_USERNAME || !TB_PASSWORD) {
+    throw new Error("Set TB_USERNAME and TB_PASSWORD before accessing the Root Rule Chain");
+  }
+  if (APPLY && !process.env.WRITER_API_TOKEN) {
+    throw new Error("Set WRITER_API_TOKEN (from docker/thingsboard/.env) before applying the Rule Chain");
+  }
   const loginRes = await fetch(`${TB_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username: "tenant@thingsboard.org", password: "tenant" })
+    body: JSON.stringify({ username: TB_USERNAME, password: TB_PASSWORD })
   });
-  if (!loginRes.ok) throw new Error(`Dang nhap that bai: ${loginRes.status}`);
+  if (!loginRes.ok) throw new Error(`ThingsBoard login failed: HTTP ${loginRes.status}`);
   const { token } = await loginRes.json();
   const H = {
     "Content-Type": "application/json",
     "X-Authorization": `Bearer ${token}`
   };
+  const WRITER_HEADERS = {
+    "Content-Type": "application/json",
+    Authorization: APPLY ? `Bearer ${process.env.WRITER_API_TOKEN}` : "Bearer <set-WRITER_API_TOKEN-to-apply>"
+  };
+  const WRITER_REST_CONFIG = {
+    requestMethod: "POST",
+    useSimpleClientHttpFactory: true,
+    readTimeoutMs: 5000,
+    maxParallelRequestsCount: 32,
+    headers: WRITER_HEADERS,
+    parseToPlainText: false,
+    ignoreRequestBody: false,
+    useRedisQueueForPerformRequest: false
+  };
 
-  const rcListRes = await fetch(`${TB_URL}/api/ruleChains?pageSize=10&page=0`, { headers: H });
+  const rcListRes = await fetch(`${TB_URL}/api/ruleChains?pageSize=100&page=0`, { headers: H });
+  if (!rcListRes.ok) throw new Error(`ThingsBoard Root Rule Chain lookup failed: HTTP ${rcListRes.status}`);
   const rcList = await rcListRes.json();
-  const rootRc = rcList.data.find(r => r.root);
-  if (!rootRc) throw new Error("Khong tim thay Root Rule Chain!");
+  const rootRc = rcList.data?.find((chain) => chain.root);
+  if (!rootRc) throw new Error("Could not find the Root Rule Chain");
   const ruleChainId = rootRc.id.id;
-  console.log(`Dang nang cap Root Rule Chain [${ruleChainId}] ...`);
+  const metadataRes = await fetch(`${TB_URL}/api/ruleChain/${ruleChainId}/metadata`, { headers: H });
+  if (!metadataRes.ok) throw new Error(`Root Rule Chain metadata backup failed: HTTP ${metadataRes.status}`);
+  const originalMetadata = await metadataRes.json();
+  const backupFile = process.env.RULE_CHAIN_BACKUP || `root_rule_chain_${ruleChainId}_backup.json`;
+  const { writeFile } = await import("node:fs/promises");
+  let backupExists = false;
+  try {
+    await writeFile(backupFile, `${JSON.stringify(originalMetadata, null, 2)}\n`, { flag: "wx" });
+  } catch (error) {
+    if (error.code !== "EEXIST") throw error;
+    backupExists = true;
+    if (APPLY && !TB_FORCE) {
+      throw new Error(`Backup already exists at ${backupFile}; choose RULE_CHAIN_BACKUP for a new file or set TB_FORCE=true only after reviewing the existing backup`);
+    }
+  }
+  if (!backupExists) console.log(`Saved original Root Rule Chain metadata to ${backupFile}`);
+  if (BACKUP_ONLY) {
+    console.log("Backup-only mode complete; no Rule Chain metadata was modified.");
+    return;
+  }
+  console.log(`Preparing InfluxDB branches for Root Rule Chain [${ruleChainId}] ...`);
+  if (APPLY && !TB_FORCE && !/^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(new URL(TB_URL).host)) {
+    throw new Error("Refusing to apply to a non-local ThingsBoard host without TB_FORCE=true");
+  }
 
   // TBEL Script cho Bo ra quyet dinh da yeu to & da thiet bi chap hanh (Multi-Actuator Decision)
   const decisionTbelScript = `
@@ -389,8 +458,111 @@ return { msg: rpc, metadata: metadata, msgType: "TO_DEVICE_RPC_REQUEST" };
         tbelScript: "return 'RPC to device ' + metadata.deviceName + ' result: ' + JSON.stringify(msg);"
       },
       additionalInfo: { layoutX: 2320, layoutY: 280 }
+    },
+    // 26: Wrap original telemetry for InfluxDB raw measurement
+    {
+      type: "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+      name: "Prepare Influx Raw Record",
+      configurationVersion: 0,
+      configuration: {
+        scriptLang: "TBEL",
+        tbelScript: "var values = msg.get('values'); if (values == null) values = msg; var record = {}; record.put('deviceName', metadata.get('deviceName')); record.put('location', metadata.get('location')); record.put('ts', metadata.get('ts')); record.put('values', values); return { msg: record, metadata: metadata, msgType: msgType };"
+      },
+      additionalInfo: { layoutX: 580, layoutY: 500 }
+    },
+    // 27: Forward raw record to the private Influx writer
+    {
+      type: "org.thingsboard.rule.engine.rest.TbRestApiCallNode",
+      name: "Write Raw Telemetry to InfluxDB",
+      configurationVersion: 0,
+      configuration: {
+        ...WRITER_REST_CONFIG,
+        restEndpointUrlPattern: "http://influx-writer:3000/write/raw"
+      },
+      additionalInfo: { layoutX: 880, layoutY: 500 }
+    },
+    // 28: Derive normalized values, alarm levels, and actuator decisions
+    {
+      type: "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+      name: "Prepare Influx Processed Record",
+      configurationVersion: 0,
+      configuration: {
+        scriptLang: "TBEL",
+        tbelScript: `var source = msg.get('values');
+if (source == null) source = msg;
+var values = {};
+var temp = source.get('temperature');
+var hum = source.get('humidity');
+var co2 = source.get('co2');
+var pm25 = source.get('pm25');
+var aqi = source.get('air_quality');
+var seq = source.get('seq');
+var targetTemp = source.get('targetTemperature');
+
+if (temp != null) values.put('temperature', temp);
+if (hum != null) values.put('humidity', hum);
+if (co2 != null) values.put('co2', co2);
+if (pm25 != null) values.put('pm25', pm25);
+if (aqi != null) values.put('air_quality', aqi);
+if (seq != null) values.put('seq', seq);
+if (targetTemp != null) values.put('targetTemperature', targetTemp);
+
+if (temp != null && hum != null) {
+  var heatIndex = temp > 26.7
+    ? (-8.784695 + 1.61139411 * temp + 2.338549 * hum - 0.14611605 * temp * hum - 0.012308094 * temp * temp - 0.016424828 * hum * hum + 0.002211732 * temp * temp * hum + 0.00072546 * temp * hum * hum - 0.000003582 * temp * temp * hum * hum)
+    : temp;
+  values.put('heatIndex', heatIndex);
+}
+if (co2 != null) values.put('co2Alarm', co2 > 1000);
+if (pm25 != null || aqi != null) values.put('airQualityAlarm', (pm25 != null && pm25 > 35.4) || (aqi != null && aqi > 100));
+if (temp != null) values.put('temperatureAlarm', temp > 38.0);
+if (hum != null) {
+  values.put('humidityAlarm', hum < 35.0);
+  values.put('humidityStatus', hum < 35.0 ? 'LOW' : (hum >= 45.0 ? 'NORMAL' : 'WATCH'));
+}
+
+if (co2 != null || aqi != null || pm25 != null || temp != null || hum != null) {
+  var critical = (co2 != null && co2 > 2000) || (aqi != null && aqi > 200) || (pm25 != null && pm25 > 125.4) || (temp != null && temp > 45.0);
+  var warning = (co2 != null && co2 > 1000) || (aqi != null && aqi > 150) || (pm25 != null && pm25 > 55.4) || (temp != null && temp > 38.0) || (hum != null && hum < 35.0);
+  values.put('alarmLevel', critical ? 'CRITICAL' : (warning ? 'WARNING' : 'NORMAL'));
+}
+if (co2 != null) values.put('fanDecision', co2 > 1000 ? 'ON' : (co2 <= 800 ? 'OFF' : 'HOLD'));
+if (pm25 != null || aqi != null) {
+  var purifierOn = (pm25 != null && pm25 > 35.4) || (aqi != null && aqi > 100);
+  var purifierOff = (pm25 != null && pm25 <= 25.0) && (aqi == null || aqi <= 75);
+  values.put('purifierDecision', purifierOn ? 'ON' : (purifierOff ? 'OFF' : 'HOLD'));
+}
+if (temp != null) values.put('coolerDecision', temp > 32.0 ? 'ON' : (temp <= 28.0 ? 'OFF' : 'HOLD'));
+if (hum != null) values.put('humidifierDecision', hum < 40.0 ? 'ON' : (hum >= 55.0 ? 'OFF' : 'HOLD'));
+if (co2 != null || aqi != null || pm25 != null || temp != null) {
+  var buzzerOn = (co2 != null && co2 > 2000) || (aqi != null && aqi > 200) || (pm25 != null && pm25 > 125.4) || (temp != null && temp > 45.0);
+  var buzzerOff = (co2 == null || co2 <= 1500) && (aqi == null || aqi <= 150) && (pm25 == null || pm25 <= 55.4) && (temp == null || temp <= 40.0);
+  values.put('buzzerDecision', buzzerOn ? 'ON' : (buzzerOff ? 'OFF' : 'HOLD'));
+}
+
+var record = {};
+record.put('deviceName', metadata.get('deviceName'));
+record.put('location', metadata.get('location'));
+record.put('ts', metadata.get('ts'));
+record.put('values', values);
+return { msg: record, metadata: metadata, msgType: msgType };`
+      },
+      additionalInfo: { layoutX: 880, layoutY: 640 }
+    },
+    // 29: Forward processed record to the private Influx writer
+    {
+      type: "org.thingsboard.rule.engine.rest.TbRestApiCallNode",
+      name: "Write Processed Telemetry to InfluxDB",
+      configurationVersion: 0,
+      configuration: {
+        ...WRITER_REST_CONFIG,
+        restEndpointUrlPattern: "http://influx-writer:3000/write/processed"
+      },
+      additionalInfo: { layoutX: 1180, layoutY: 640 }
     }
   ];
+
+  // Note: each external write is a separate branch. Its failure route is logged by the Rule Engine.
 
   // Ket noi giua cac nodes
   const connections = [
@@ -439,7 +611,13 @@ return { msg: rpc, metadata: metadata, msgType: "TO_DEVICE_RPC_REQUEST" };
 
     // Send RPC -> Log Result (25)
     { fromIndex: 24, toIndex: 25, type: "Success" },
-    { fromIndex: 24, toIndex: 25, type: "Failure" }
+    { fromIndex: 24, toIndex: 25, type: "Failure" },
+
+    // Persist telemetry independently of alarm and RPC routing.
+    { fromIndex: 1, toIndex: 26, type: "Success" },
+    { fromIndex: 26, toIndex: 27, type: "Success" },
+    { fromIndex: 1, toIndex: 28, type: "Success" },
+    { fromIndex: 28, toIndex: 29, type: "Success" }
   ];
 
   const payload = {
@@ -450,6 +628,19 @@ return { msg: rpc, metadata: metadata, msgType: "TO_DEVICE_RPC_REQUEST" };
     ruleChainConnections: null
   };
 
+  payload.firstNodeIndex = originalMetadata.firstNodeIndex ?? 0;
+  const nodeNames = nodes.map((node) => node.name);
+  const connectionSummary = connections.map(({ fromIndex, toIndex, type }) => ({
+    from: nodeNames[fromIndex],
+    to: nodeNames[toIndex],
+    type
+  }));
+  console.log(JSON.stringify({ mode: APPLY ? "apply" : "preview", nodeCount: nodes.length, connectionCount: connections.length, connectionSummary }, null, 2));
+  if (!APPLY) {
+    console.log("Preview only. Review the generated plan and metadata backup; pass --apply to replace Root Rule Chain metadata.");
+    return;
+  }
+
   const saveRes = await fetch(`${TB_URL}/api/ruleChain/metadata`, {
     method: "POST",
     headers: H,
@@ -458,12 +649,12 @@ return { msg: rpc, metadata: metadata, msgType: "TO_DEVICE_RPC_REQUEST" };
 
   if (!saveRes.ok) {
     const errText = await saveRes.text();
-    throw new Error(`Loi khi luu Rule Chain metadata: HTTP ${saveRes.status} - ${errText}`);
+    throw new Error(`Failed to save Root Rule Chain metadata: HTTP ${saveRes.status} - ${errText}`);
   }
 
-  console.log("Cap nhat Root Rule Chain thanh cong!");
-  console.log(`Tong so node: ${nodes.length}`);
-  console.log(`Tong so connection: ${connections.length}`);
+  console.log("Root Rule Chain metadata applied successfully.");
+  console.log(`Nodes: ${nodes.length}; connections: ${connections.length}`);
+  console.log(`Original metadata backup: ${backupFile}`);
 }
 
 main().catch(err => {
