@@ -1,0 +1,57 @@
+name: influxdb3-iot-poc
+services:
+  influxdb3:
+    image: influxdb:3-core
+    user: "0:0"
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8181:8181"
+    command: ["influxdb3", "serve", "--node-id=node0", "--object-store=file", "--data-dir=/var/lib/influxdb3/data"]
+    volumes:
+      - influx_data:/var/lib/influxdb3/data
+    networks: [iot]
+  explorer:
+    image: influxdata/influxdb3-ui:1.11.0
+    command: ["--mode=admin"]
+    ports:
+      - "127.0.0.1:8888:8080"
+    depends_on:
+      - influxdb3
+    networks: [iot]
+    restart: unless-stopped
+    volumes:
+    - explorer_data:/app/data
+  mqtt:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    ports:
+      - "127.0.0.1:1883:1883"
+    networks: [iot]
+  telegraf:
+    image: telegraf:1.38
+    restart: unless-stopped
+    depends_on: [influxdb3, mqtt]
+    env_file: .env
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    networks: [iot]
+  grafana:
+    image: grafana/grafana:12.2.0
+    restart: unless-stopped
+    depends_on: [influxdb3]
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file: .env
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks: [iot]
+networks:
+  iot: {}
+volumes:
+  influx_data: {}
+  grafana_data: {}
+  explorer_data: {}
