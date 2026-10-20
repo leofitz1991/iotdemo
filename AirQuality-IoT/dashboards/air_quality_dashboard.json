@@ -101,7 +101,8 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => (r[\"_field\"] == \"aqi\" or r[\"_field\"] == \"air_quality\"))\n  |> filter(fn: (r) => (r[\"device\"] =~ /^${device:regex}$/ or r[\"device_id\"] =~ /^${device:regex}$/))\n  |> last()\n  |> group(columns: [\"_field\"])\n  |> mean()",
+          "rawQuery": true,
+          "query": "SELECT last(\"air_quality\") AS \"air_quality\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/",
           "refId": "A"
         }
       ],
@@ -168,7 +169,8 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => r[\"_field\"] == \"co2\")\n  |> filter(fn: (r) => (r[\"device\"] =~ /^${device:regex}$/ or r[\"device_id\"] =~ /^${device:regex}$/))\n  |> last()\n  |> group(columns: [\"_field\"])\n  |> mean()",
+          "rawQuery": true,
+          "query": "SELECT last(\"co2\") AS \"co2\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/",
           "refId": "A"
         }
       ],
@@ -239,7 +241,8 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => r[\"_field\"] == \"pm25\")\n  |> filter(fn: (r) => (r[\"device\"] =~ /^${device:regex}$/ or r[\"device_id\"] =~ /^${device:regex}$/))\n  |> last()\n  |> group(columns: [\"_field\"])\n  |> mean()",
+          "rawQuery": true,
+          "query": "SELECT last(\"pm25\") AS \"pm25\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/",
           "refId": "A"
         }
       ],
@@ -310,7 +313,8 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => r[\"_field\"] == \"temperature\")\n  |> filter(fn: (r) => (r[\"device\"] =~ /^${device:regex}$/ or r[\"device_id\"] =~ /^${device:regex}$/))\n  |> last()\n  |> group(columns: [\"_field\"])\n  |> mean()",
+          "rawQuery": true,
+          "query": "SELECT last(\"temperature\") AS \"temperature\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/",
           "refId": "A"
         }
       ],
@@ -381,7 +385,8 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => r[\"_field\"] == \"humidity\")\n  |> filter(fn: (r) => (r[\"device\"] =~ /^${device:regex}$/ or r[\"device_id\"] =~ /^${device:regex}$/))\n  |> last()\n  |> group(columns: [\"_field\"])\n  |> mean()",
+          "rawQuery": true,
+          "query": "SELECT last(\"humidity\") AS \"humidity\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/",
           "refId": "A"
         }
       ],
@@ -467,7 +472,8 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: -15m)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => (r[\"_field\"] == \"aqi\" or r[\"_field\"] == \"air_quality\"))\n  |> filter(fn: (r) => (r[\"device\"] =~ /^${device:regex}$/ or r[\"device_id\"] =~ /^${device:regex}$/))\n  |> last()",
+          "rawQuery": true,
+          "query": "SELECT last(\"air_quality\") AS \"air_quality\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/",
           "refId": "A"
         }
       ],
@@ -537,7 +543,8 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: -15m)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => r[\"_field\"] == \"co2\")\n  |> filter(fn: (r) => (r[\"device\"] =~ /^${device:regex}$/ or r[\"device_id\"] =~ /^${device:regex}$/))\n  |> last()",
+          "rawQuery": true,
+          "query": "SELECT last(\"co2\") AS \"co2\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/",
           "refId": "A"
         }
       ],
@@ -607,7 +614,8 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: -15m)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => r[\"_field\"] == \"pm25\")\n  |> filter(fn: (r) => (r[\"device\"] =~ /^${device:regex}$/ or r[\"device_id\"] =~ /^${device:regex}$/))\n  |> last()",
+          "rawQuery": true,
+          "query": "SELECT last(\"pm25\") AS \"pm25\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/",
           "refId": "A"
         }
       ],
@@ -677,7 +685,8 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: -15m)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => r[\"_field\"] == \"temperature\")\n  |> filter(fn: (r) => (r[\"device\"] =~ /^${device:regex}$/ or r[\"device_id\"] =~ /^${device:regex}$/))\n  |> last()",
+          "rawQuery": true,
+          "query": "SELECT last(\"temperature\") AS \"temperature\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/",
           "refId": "A"
         }
       ],
@@ -747,7 +756,8 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: -15m)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => r[\"_field\"] == \"humidity\")\n  |> filter(fn: (r) => (r[\"device\"] =~ /^${device:regex}$/ or r[\"device_id\"] =~ /^${device:regex}$/))\n  |> last()",
+          "rawQuery": true,
+          "query": "SELECT last(\"humidity\") AS \"humidity\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/",
           "refId": "A"
         }
       ],
@@ -860,8 +870,18 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => r[\"_field\"] == \"co2\" or r[\"_field\"] == \"pm25\")\n  |> filter(fn: (r) => (r[\"device\"] =~ /^${device:regex}$/ or r[\"device_id\"] =~ /^${device:regex}$/))\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+          "rawQuery": true,
+          "query": "SELECT mean(\"co2\") AS \"CO2 (ppm)\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P7206BD2ACDC63FCC"
+          },
+          "rawQuery": true,
+          "query": "SELECT mean(\"pm25\") AS \"PM2.5 (ug/m3)\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "refId": "B"
         }
       ],
       "title": "Ô Nhiễm Không Khí: Nồng Độ CO2 và Bụi Mịn PM2.5",
@@ -959,8 +979,18 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => r[\"_field\"] == \"temperature\" or r[\"_field\"] == \"humidity\")\n  |> filter(fn: (r) => (r[\"device\"] =~ /^${device:regex}$/ or r[\"device_id\"] =~ /^${device:regex}$/))\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+          "rawQuery": true,
+          "query": "SELECT mean(\"temperature\") AS \"Nhiệt độ (°C)\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P7206BD2ACDC63FCC"
+          },
+          "rawQuery": true,
+          "query": "SELECT mean(\"humidity\") AS \"Độ ẩm (%)\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "refId": "B"
         }
       ],
       "title": "Môi Trường Vi Khí Hậu: Nhiệt Độ & Độ Ẩm",
@@ -1073,7 +1103,8 @@
             "type": "influxdb",
             "uid": "P7206BD2ACDC63FCC"
           },
-          "query": "from(bucket: \"airquality\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^air_quality/)\n  |> filter(fn: (r) => (exists r[\"device\"] or exists r[\"device_id\"]))\n  |> last()\n  |> pivot(rowKey:[\"device\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group()\n  |> keep(columns: [\"_time\", \"device\", \"temperature\", \"humidity\", \"co2\", \"pm25\", \"air_quality\", \"heatIndex\", \"alarmLevel\", \"fanDecision\", \"purifierDecision\", \"coolerDecision\", \"buzzerDecision\"])\n  |> sort(columns: [\"device\"])",
+          "rawQuery": true,
+          "query": "SELECT last(\"temperature\") AS \"Nhiệt độ (°C)\", last(\"humidity\") AS \"Độ ẩm (%)\", last(\"co2\") AS \"CO2 (ppm)\", last(\"pm25\") AS \"PM2.5 (ug/m3)\", last(\"air_quality\") AS \"AQI\", last(\"fanDecision\") AS \"Quạt (Fan)\", last(\"purifierDecision\") AS \"Lọc khí (Purifier)\", last(\"coolerDecision\") AS \"Làm mát (Cooler)\", last(\"buzzerDecision\") AS \"Còi (Buzzer)\" FROM \"air_quality_processed\" WHERE \"device\" =~ /^$device$/ GROUP BY \"device\"",
           "refId": "A"
         }
       ],
@@ -1093,6 +1124,7 @@
   "templating": {
     "list": [
       {
+        "allValue": ".*",
         "current": {
           "selected": true,
           "text": "All",
@@ -1102,20 +1134,19 @@
           "type": "influxdb",
           "uid": "P7206BD2ACDC63FCC"
         },
-        "definition": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"airquality\", tag: \"device\")",
+        "definition": "SHOW TAG VALUES FROM \"air_quality_processed\" WITH KEY = \"device\"",
         "hide": 0,
         "includeAll": true,
         "label": "Chọn Thiết Bị",
         "multi": true,
         "name": "device",
         "options": [],
-        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"airquality\", tag: \"device\")",
+        "query": "SHOW TAG VALUES FROM \"air_quality_processed\" WITH KEY = \"device\"",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
         "sort": 1,
-        "type": "query",
-        "allValue": ".*"
+        "type": "query"
       }
     ]
   },

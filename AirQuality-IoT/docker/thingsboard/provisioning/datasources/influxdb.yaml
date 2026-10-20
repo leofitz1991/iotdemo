@@ -5,13 +5,13 @@ datasources:
     uid: P7206BD2ACDC63FCC
     type: influxdb
     access: proxy
-    url: http://influxdb:8086
+    url: http://influxdb:8181
+    database: airquality
     jsonData:
-      version: Flux
-      organization: ctu-iot
-      defaultBucket: airquality
+      httpMode: GET
+      httpHeaderName1: Authorization
       tlsSkipVerify: true
     secureJsonData:
-      token: ctu_iot_token_2026_secret_key
+      httpHeaderValue1: Bearer apiv3__EN-whNXRzIPGQUiTdBNC_wU78OuTBfWdSBKKWrllZZoATjJQZyiv8LFzRKJohlwYzhe2dEhzl-3lyK-SymErQ
     isDefault: true
     editable: true
