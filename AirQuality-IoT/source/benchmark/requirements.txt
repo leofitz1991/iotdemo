@@ -1,0 +1,5 @@
+# Python dependencies for Khiem's scripts
+# Note: The scripts are written using Python's standard library (urllib),
+# but if you prefer using third-party packages, these are optional:
+influxdb-client>=1.36.0
+requests>=2.28.0
