@@ -5,7 +5,6 @@ name: airquality-iot
 # Chay ThingsBoard: docker compose -p airquality-iot up -d
 # InfluxDB opt-in:   docker compose --profile influx up -d influxdb
 # Writer opt-in:     docker compose --profile influx up -d influx-writer
-# Grafana opt-in:    docker compose --profile influx up -d grafana
 services:
   postgres:
     image: postgres:18
@@ -22,29 +21,45 @@ services:
       timeout: 5s
       retries: 10
 
+  influxdb3-data-init:
+    image: influxdb:3-core
+    profiles: ["influx"]
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["chown -R influxdb3:influxdb3 /var/lib/influxdb3/data"]
+    volumes:
+      - influxdb3-data:/var/lib/influxdb3/data
+
   influxdb:
-    image: influxdb:2.7
+    image: influxdb:3-core
     restart: always
     profiles: ["influx"]
     env_file:
       - ./.env
     environment:
-      DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_ADMIN_USER:-airquality}
-      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_ADMIN_PASSWORD:?Set INFLUXDB_ADMIN_PASSWORD in .env}
-      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG:-airquality-iot}
-      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET:-airquality}
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_ADMIN_TOKEN:?Set INFLUXDB_ADMIN_TOKEN in .env}
+      INFLUXDB3_AUTH_TOKEN: ${INFLUXDB3_AUTH_TOKEN:?Run node create_influx_write_token.mjs to prepare the Core admin token}
     ports:
-      - "127.0.0.1:8086:8086" # InfluxDB UI/API accessible only from this host
+      - "127.0.0.1:8181:8181" # InfluxDB 3 API accessible only from this host
     volumes:
-      - influxdb-data:/var/lib/influxdb2
-      - influxdb-config:/etc/influxdb2
+      - influxdb3-data:/var/lib/influxdb3/data
+      - ./influxdb3-admin-token.json:/etc/influxdb3/admin-token.json:ro
     healthcheck:
-      test: ["CMD", "influx", "ping", "--host", "http://localhost:8086"]
+      test: ["CMD-SHELL", "influxdb3 show databases --host http://127.0.0.1:8181 --token \"$$INFLUXDB3_AUTH_TOKEN\" >/dev/null 2>&1"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 20s
+    depends_on:
+      influxdb3-data-init:
+        condition: service_completed_successfully
+    command:
+      - serve
+      - --node-id=airquality-iot
+      - --object-store=file
+      - --data-dir=/var/lib/influxdb3/data
+      - --http-bind=0.0.0.0:8181
+      - --admin-token-file=/etc/influxdb3/admin-token.json
+
 
   influx-writer:
     image: node:22-alpine
@@ -58,10 +73,9 @@ services:
       - ./influx_writer.mjs:/app/influx_writer.mjs:ro
     environment:
       PORT: 3000
-      INFLUX_URL: http://influxdb:8086
-      INFLUX_ORG: ${INFLUXDB_ORG:-airquality-iot}
-      INFLUX_BUCKET: ${INFLUXDB_BUCKET:-airquality}
-      INFLUX_TOKEN: ${INFLUXDB_WRITE_TOKEN:?Create INFLUXDB_WRITE_TOKEN before starting influx-writer}
+      INFLUX_URL: http://influxdb:8181
+      INFLUX_DATABASE: ${INFLUX_DATABASE:-airquality}
+      INFLUX_TOKEN: ${INFLUXDB3_AUTH_TOKEN:?Set INFLUXDB3_AUTH_TOKEN for InfluxDB 3 Core}
       WRITER_API_TOKEN: ${WRITER_API_TOKEN:?Set WRITER_API_TOKEN in .env before starting influx-writer}
     depends_on:
       influxdb:
@@ -94,6 +108,7 @@ services:
       influxdb:
         condition: service_healthy
 
+
   thingsboard-ce:
     image: thingsboard/tb-node:4.3.1.6
     restart: always
@@ -117,4 +132,6 @@ volumes:
   tb-postgres-data:
   influxdb-data:
   influxdb-config:
+  influxdb3-data:
   tb-grafana-data:
+

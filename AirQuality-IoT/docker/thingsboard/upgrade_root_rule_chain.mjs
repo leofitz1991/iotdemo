@@ -466,7 +466,7 @@ return { msg: rpc, metadata: metadata, msgType: "TO_DEVICE_RPC_REQUEST" };
       configurationVersion: 0,
       configuration: {
         scriptLang: "TBEL",
-        tbelScript: "var values = msg.get('values'); if (values == null) values = msg; var record = {}; record.put('deviceName', metadata.get('deviceName')); record.put('location', metadata.get('location')); record.put('ts', metadata.get('ts')); record.put('values', values); return { msg: record, metadata: metadata, msgType: msgType };"
+        tbelScript: "var source = msg.get('values'); if (source == null) source = msg; var values = {}; if (source.get('temperature') != null) values.put('temperature', source.get('temperature')); if (source.get('humidity') != null) values.put('humidity', source.get('humidity')); if (source.get('co2') != null) values.put('co2', source.get('co2')); if (source.get('pm25') != null) values.put('pm25', source.get('pm25')); if (source.get('air_quality') != null) values.put('air_quality', source.get('air_quality')); if (source.get('seq') != null) values.put('seq', source.get('seq')); var record = {}; record.put('deviceName', metadata.get('deviceName')); record.put('location', metadata.get('location')); record.put('ts', metadata.get('ts')); record.put('values', values); return { msg: record, metadata: metadata, msgType: msgType };"
       },
       additionalInfo: { layoutX: 580, layoutY: 500 }
     },
@@ -477,7 +477,11 @@ return { msg: rpc, metadata: metadata, msgType: "TO_DEVICE_RPC_REQUEST" };
       configurationVersion: 0,
       configuration: {
         ...WRITER_REST_CONFIG,
-        restEndpointUrlPattern: "http://influx-writer:3000/write/raw"
+        restEndpointUrlPattern: "http://influx-writer:3000/write/raw",
+        headers: {
+          ...WRITER_HEADERS,
+          "X-Writer-Route": "raw"
+        },
       },
       additionalInfo: { layoutX: 880, layoutY: 500 }
     },
@@ -556,7 +560,11 @@ return { msg: record, metadata: metadata, msgType: msgType };`
       configurationVersion: 0,
       configuration: {
         ...WRITER_REST_CONFIG,
-        restEndpointUrlPattern: "http://influx-writer:3000/write/processed"
+        restEndpointUrlPattern: "http://influx-writer:3000/write/processed",
+        headers: {
+          ...WRITER_HEADERS,
+          "X-Writer-Route": "processed"
+        },
       },
       additionalInfo: { layoutX: 1180, layoutY: 640 }
     }

@@ -9,7 +9,7 @@
     "additionalInfo": null
   },
   "metadata": {
-    "version": 35,
+    "version": 41,
     "firstNodeIndex": 0,
     "nodes": [
       {
@@ -311,8 +311,8 @@
           "tbelScript": "\nvar rpc = {\n    method: \"setFan\",\n    params: true,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
         },
         "additionalInfo": {
-          "layoutX": 1400,
-          "layoutY": 680
+          "layoutX": 1750,
+          "layoutY": 20
         }
       },
       {
@@ -327,8 +327,8 @@
           "tbelScript": "\nvar rpc = {\n    method: \"setFan\",\n    params: false,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
         },
         "additionalInfo": {
-          "layoutX": 1400,
-          "layoutY": 740
+          "layoutX": 1750,
+          "layoutY": 80
         }
       },
       {
@@ -343,8 +343,8 @@
           "tbelScript": "\nvar rpc = {\n    method: \"setPurifier\",\n    params: true,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
         },
         "additionalInfo": {
-          "layoutX": 1400,
-          "layoutY": 800
+          "layoutX": 1750,
+          "layoutY": 140
         }
       },
       {
@@ -359,8 +359,8 @@
           "tbelScript": "\nvar rpc = {\n    method: \"setPurifier\",\n    params: false,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
         },
         "additionalInfo": {
-          "layoutX": 1400,
-          "layoutY": 860
+          "layoutX": 1750,
+          "layoutY": 200
         }
       },
       {
@@ -375,8 +375,8 @@
           "tbelScript": "\nvar rpc = {\n    method: \"setCooler\",\n    params: true,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
         },
         "additionalInfo": {
-          "layoutX": 1400,
-          "layoutY": 920
+          "layoutX": 1750,
+          "layoutY": 260
         }
       },
       {
@@ -391,8 +391,8 @@
           "tbelScript": "\nvar rpc = {\n    method: \"setCooler\",\n    params: false,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
         },
         "additionalInfo": {
-          "layoutX": 1400,
-          "layoutY": 980
+          "layoutX": 1750,
+          "layoutY": 320
         }
       },
       {
@@ -407,8 +407,8 @@
           "tbelScript": "\nvar rpc = {\n    method: \"setHumidifier\",\n    params: true,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
         },
         "additionalInfo": {
-          "layoutX": 1400,
-          "layoutY": 1040
+          "layoutX": 1750,
+          "layoutY": 380
         }
       },
       {
@@ -423,8 +423,8 @@
           "tbelScript": "\nvar rpc = {\n    method: \"setHumidifier\",\n    params: false,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
         },
         "additionalInfo": {
-          "layoutX": 1400,
-          "layoutY": 1100
+          "layoutX": 1750,
+          "layoutY": 440
         }
       },
       {
@@ -439,8 +439,8 @@
           "tbelScript": "\nvar rpc = {\n    method: \"setBuzzer\",\n    params: true,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
         },
         "additionalInfo": {
-          "layoutX": 1400,
-          "layoutY": 1160
+          "layoutX": 1750,
+          "layoutY": 500
         }
       },
       {
@@ -455,8 +455,8 @@
           "tbelScript": "\nvar rpc = {\n    method: \"setBuzzer\",\n    params: false,\n    timeout: 5000\n};\nreturn { msg: rpc, metadata: metadata, msgType: \"TO_DEVICE_RPC_REQUEST\" };\n"
         },
         "additionalInfo": {
-          "layoutX": 1400,
-          "layoutY": 1220
+          "layoutX": 1750,
+          "layoutY": 560
         }
       },
       {
@@ -470,8 +470,8 @@
           "timeoutInSeconds": 30
         },
         "additionalInfo": {
-          "layoutX": 1759,
-          "layoutY": 711
+          "layoutX": 2050,
+          "layoutY": 280
         }
       },
       {
@@ -486,14 +486,18 @@
           "tbelScript": "return 'RPC to device ' + metadata.deviceName + ' result: ' + JSON.stringify(msg);"
         },
         "additionalInfo": {
-          "layoutX": 1723,
-          "layoutY": 1038
+          "layoutX": 2320,
+          "layoutY": 280
         }
       },
       {
         "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
         "name": "Prepare Influx Raw Record",
-        "debugSettings": null,
+        "debugSettings": {
+          "failuresEnabled": false,
+          "allEnabled": false,
+          "allEnabledUntil": 1792505203900
+        },
         "singletonMode": false,
         "queueName": null,
         "configurationVersion": 0,
@@ -502,41 +506,61 @@
           "tbelScript": "var source = msg.get('values'); if (source == null) source = msg; var values = {}; if (source.get('temperature') != null) values.put('temperature', source.get('temperature')); if (source.get('humidity') != null) values.put('humidity', source.get('humidity')); if (source.get('co2') != null) values.put('co2', source.get('co2')); if (source.get('pm25') != null) values.put('pm25', source.get('pm25')); if (source.get('air_quality') != null) values.put('air_quality', source.get('air_quality')); if (source.get('seq') != null) values.put('seq', source.get('seq')); var record = {}; record.put('deviceName', metadata.get('deviceName')); record.put('location', metadata.get('location')); record.put('ts', metadata.get('ts')); record.put('values', values); return { msg: record, metadata: metadata, msgType: msgType };"
         },
         "additionalInfo": {
-          "layoutX": 863,
-          "layoutY": 372
+          "description": null,
+          "layoutX": 580,
+          "layoutY": 500
         }
       },
       {
         "type": "org.thingsboard.rule.engine.rest.TbRestApiCallNode",
         "name": "Write Raw Telemetry to InfluxDB",
-        "debugSettings": null,
+        "debugSettings": {
+          "failuresEnabled": false,
+          "allEnabled": false,
+          "allEnabledUntil": 1792505147939
+        },
         "singletonMode": false,
         "queueName": null,
         "configurationVersion": 3,
         "configuration": {
+          "restEndpointUrlPattern": "http://influx-writer:3000/write/raw",
           "requestMethod": "POST",
           "useSimpleClientHttpFactory": true,
+          "parseToPlainText": false,
+          "ignoreRequestBody": false,
+          "enableProxy": null,
+          "useSystemProxyProperties": null,
+          "proxyScheme": null,
+          "proxyHost": null,
+          "proxyPort": null,
+          "proxyUser": null,
+          "proxyPassword": null,
           "readTimeoutMs": 5000,
           "maxParallelRequestsCount": 32,
           "headers": {
             "Content-Type": "application/json",
-            "Authorization": "Bearer writer_secret_api_token_2026"
+            "Authorization": "Bearer FZSH_8v6ihxfnw3cbbnygAxXzCy2JTBJR7PxxagiG8c",
+            "X-Writer-Route": "raw"
           },
-          "parseToPlainText": false,
-          "ignoreRequestBody": false,
-          "useRedisQueueForPerformRequest": false,
-          "restEndpointUrlPattern": "http://influx-writer:3000/write/raw",
+          "credentials": {
+            "type": "anonymous"
+          },
           "maxInMemoryBufferSizeInKb": 256
         },
         "additionalInfo": {
-          "layoutX": 887,
-          "layoutY": 449
+          "description": null,
+          "layoutX": 880,
+          "layoutY": 500
         }
       },
       {
         "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
         "name": "Prepare Influx Processed Record",
-        "debugSettings": null,
+        "debugSettings": {
+          "failuresEnabled": false,
+          "allEnabled": false,
+          "allEnabledUntil": 1792505237552
+        },
         "singletonMode": false,
         "queueName": null,
         "configurationVersion": 0,
@@ -545,35 +569,51 @@
           "tbelScript": "var source = msg.get('values');\nif (source == null) source = msg;\nvar values = {};\nvar temp = source.get('temperature');\nvar hum = source.get('humidity');\nvar co2 = source.get('co2');\nvar pm25 = source.get('pm25');\nvar aqi = source.get('air_quality');\nvar seq = source.get('seq');\nvar targetTemp = source.get('targetTemperature');\n\nif (temp != null) values.put('temperature', temp);\nif (hum != null) values.put('humidity', hum);\nif (co2 != null) values.put('co2', co2);\nif (pm25 != null) values.put('pm25', pm25);\nif (aqi != null) values.put('air_quality', aqi);\nif (seq != null) values.put('seq', seq);\nif (targetTemp != null) values.put('targetTemperature', targetTemp);\n\nif (temp != null && hum != null) {\n  var heatIndex = temp > 26.7\n    ? (-8.784695 + 1.61139411 * temp + 2.338549 * hum - 0.14611605 * temp * hum - 0.012308094 * temp * temp - 0.016424828 * hum * hum + 0.002211732 * temp * temp * hum + 0.00072546 * temp * hum * hum - 0.000003582 * temp * temp * hum * hum)\n    : temp;\n  values.put('heatIndex', heatIndex);\n}\nif (co2 != null) values.put('co2Alarm', co2 > 1000);\nif (pm25 != null || aqi != null) values.put('airQualityAlarm', (pm25 != null && pm25 > 35.4) || (aqi != null && aqi > 100));\nif (temp != null) values.put('temperatureAlarm', temp > 38.0);\nif (hum != null) {\n  values.put('humidityAlarm', hum < 35.0);\n  values.put('humidityStatus', hum < 35.0 ? 'LOW' : (hum >= 45.0 ? 'NORMAL' : 'WATCH'));\n}\n\nif (co2 != null || aqi != null || pm25 != null || temp != null || hum != null) {\n  var critical = (co2 != null && co2 > 2000) || (aqi != null && aqi > 200) || (pm25 != null && pm25 > 125.4) || (temp != null && temp > 45.0);\n  var warning = (co2 != null && co2 > 1000) || (aqi != null && aqi > 150) || (pm25 != null && pm25 > 55.4) || (temp != null && temp > 38.0) || (hum != null && hum < 35.0);\n  values.put('alarmLevel', critical ? 'CRITICAL' : (warning ? 'WARNING' : 'NORMAL'));\n}\nif (co2 != null) values.put('fanDecision', co2 > 1000 ? 'ON' : (co2 <= 800 ? 'OFF' : 'HOLD'));\nif (pm25 != null || aqi != null) {\n  var purifierOn = (pm25 != null && pm25 > 35.4) || (aqi != null && aqi > 100);\n  var purifierOff = (pm25 != null && pm25 <= 25.0) && (aqi == null || aqi <= 75);\n  values.put('purifierDecision', purifierOn ? 'ON' : (purifierOff ? 'OFF' : 'HOLD'));\n}\nif (temp != null) values.put('coolerDecision', temp > 32.0 ? 'ON' : (temp <= 28.0 ? 'OFF' : 'HOLD'));\nif (hum != null) values.put('humidifierDecision', hum < 40.0 ? 'ON' : (hum >= 55.0 ? 'OFF' : 'HOLD'));\nif (co2 != null || aqi != null || pm25 != null || temp != null) {\n  var buzzerOn = (co2 != null && co2 > 2000) || (aqi != null && aqi > 200) || (pm25 != null && pm25 > 125.4) || (temp != null && temp > 45.0);\n  var buzzerOff = (co2 == null || co2 <= 1500) && (aqi == null || aqi <= 150) && (pm25 == null || pm25 <= 55.4) && (temp == null || temp <= 40.0);\n  values.put('buzzerDecision', buzzerOn ? 'ON' : (buzzerOff ? 'OFF' : 'HOLD'));\n}\n\nvar record = {};\nrecord.put('deviceName', metadata.get('deviceName'));\nrecord.put('location', metadata.get('location'));\nrecord.put('ts', metadata.get('ts'));\nrecord.put('values', values);\nreturn { msg: record, metadata: metadata, msgType: msgType };"
         },
         "additionalInfo": {
-          "layoutX": 868,
-          "layoutY": 510
+          "description": null,
+          "layoutX": 880,
+          "layoutY": 640
         }
       },
       {
         "type": "org.thingsboard.rule.engine.rest.TbRestApiCallNode",
         "name": "Write Processed Telemetry to InfluxDB",
-        "debugSettings": null,
+        "debugSettings": {
+          "failuresEnabled": false,
+          "allEnabled": false,
+          "allEnabledUntil": 1792505147939
+        },
         "singletonMode": false,
         "queueName": null,
         "configurationVersion": 3,
         "configuration": {
+          "restEndpointUrlPattern": "http://influx-writer:3000/write/processed",
           "requestMethod": "POST",
           "useSimpleClientHttpFactory": true,
+          "parseToPlainText": false,
+          "ignoreRequestBody": false,
+          "enableProxy": null,
+          "useSystemProxyProperties": null,
+          "proxyScheme": null,
+          "proxyHost": null,
+          "proxyPort": null,
+          "proxyUser": null,
+          "proxyPassword": null,
           "readTimeoutMs": 5000,
           "maxParallelRequestsCount": 32,
           "headers": {
             "Content-Type": "application/json",
-            "Authorization": "Bearer writer_secret_api_token_2026"
+            "Authorization": "Bearer FZSH_8v6ihxfnw3cbbnygAxXzCy2JTBJR7PxxagiG8c",
+            "X-Writer-Route": "processed"
           },
-          "parseToPlainText": false,
-          "ignoreRequestBody": false,
-          "useRedisQueueForPerformRequest": false,
-          "restEndpointUrlPattern": "http://influx-writer:3000/write/processed",
+          "credentials": {
+            "type": "anonymous"
+          },
           "maxInMemoryBufferSizeInKb": 256
         },
         "additionalInfo": {
-          "layoutX": 880,
-          "layoutY": 600
+          "description": null,
+          "layoutX": 1180,
+          "layoutY": 640
         }
       }
     ],
