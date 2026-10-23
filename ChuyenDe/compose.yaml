@@ -10,17 +10,6 @@ services:
     volumes:
       - influx_data:/var/lib/influxdb3/data
     networks: [iot]
-  explorer:
-    image: influxdata/influxdb3-ui:1.11.0
-    command: ["--mode=admin"]
-    ports:
-      - "127.0.0.1:8888:8080"
-    depends_on:
-      - influxdb3
-    networks: [iot]
-    restart: unless-stopped
-    volumes:
-    - explorer_data:/app/data
   mqtt:
     image: eclipse-mosquitto:2
     restart: unless-stopped
@@ -44,6 +33,9 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     env_file: .env
+    environment:
+      - GF_PLUGINS_PREINSTALL_AUTO_UPDATE=false
+      - GF_FEATURE_TOGGLES_ENABLE=influxdbBackendMigration
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
@@ -54,4 +46,3 @@ networks:
 volumes:
   influx_data: {}
   grafana_data: {}
-  explorer_data: {}

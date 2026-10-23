@@ -1,34 +1,196 @@
 {
-  "uid": "iot-env",
-  "title": "IoT Environment - InfluxDB 3",
-  "schemaVersion": 41,
-  "version": 1,
-  "refresh": "10s",
-  "time": {
-    "from": "now-30m",
-    "to": "now"
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
   },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
   "panels": [
     {
       "id": 1,
-      "title": "Temperature (avg)",
-      "type": "timeseries",
+      "title": "AQI hiện tại",
+      "type": "stat",
       "datasource": {
         "type": "influxdb",
-        "uid": "influxdb3"
+        "uid": "P7206BD2ACDC63FCC"
       },
       "gridPos": {
-        "h": 9,
-        "w": 12,
         "x": 0,
-        "y": 0
+        "y": 0,
+        "w": 5,
+        "h": 5
       },
       "targets": [
         {
           "refId": "A",
-          "query": "SELECT date_bin(INTERVAL '1 minute', time) AS time, AVG(temperature) AS value FROM environment WHERE $__timeFilter(time) GROUP BY 1 ORDER BY 1",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P7206BD2ACDC63FCC"
+          },
+          "queryType": "sql",
           "rawQuery": true,
-          "format": "time_series"
+          "rawSql": "SELECT time, air_quality FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
+          "query": "SELECT time, air_quality FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 2,
+      "title": "CO₂ hiện tại",
+      "type": "stat",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P7206BD2ACDC63FCC"
+      },
+      "gridPos": {
+        "x": 5,
+        "y": 0,
+        "w": 5,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P7206BD2ACDC63FCC"
+          },
+          "queryType": "sql",
+          "rawQuery": true,
+          "rawSql": "SELECT time, co2 FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
+          "query": "SELECT time, co2 FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ppm"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 3,
+      "title": "PM2.5 hiện tại",
+      "type": "stat",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P7206BD2ACDC63FCC"
+      },
+      "gridPos": {
+        "x": 10,
+        "y": 0,
+        "w": 5,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P7206BD2ACDC63FCC"
+          },
+          "queryType": "sql",
+          "rawQuery": true,
+          "rawSql": "SELECT time, pm25 FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
+          "query": "SELECT time, pm25 FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "µg/m³"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Nhiệt độ hiện tại",
+      "type": "stat",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P7206BD2ACDC63FCC"
+      },
+      "gridPos": {
+        "x": 15,
+        "y": 0,
+        "w": 5,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P7206BD2ACDC63FCC"
+          },
+          "queryType": "sql",
+          "rawQuery": true,
+          "rawSql": "SELECT time, temperature FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
+          "query": "SELECT time, temperature FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
+          "format": "table"
         }
       ],
       "fieldConfig": {
@@ -38,32 +200,45 @@
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area"
       }
     },
     {
-      "id": 2,
-      "title": "Humidity (avg)",
-      "type": "timeseries",
+      "id": 5,
+      "title": "Độ ẩm hiện tại",
+      "type": "stat",
       "datasource": {
         "type": "influxdb",
-        "uid": "influxdb3"
+        "uid": "P7206BD2ACDC63FCC"
       },
       "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 0
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 5
       },
       "targets": [
         {
           "refId": "A",
-          "query": "SELECT date_bin(INTERVAL '1 minute', time) AS time, AVG(humidity) AS value FROM environment WHERE $__timeFilter(time) GROUP BY 1 ORDER BY 1",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P7206BD2ACDC63FCC"
+          },
+          "queryType": "sql",
           "rawQuery": true,
-          "format": "time_series"
+          "rawSql": "SELECT time, humidity FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
+          "query": "SELECT time, humidity FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
+          "format": "table"
         }
       ],
       "fieldConfig": {
@@ -73,31 +248,44 @@
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area"
       }
     },
     {
-      "id": 3,
-      "title": "Air quality (avg)",
+      "id": 6,
+      "title": "Xu hướng CO₂ và PM2.5",
       "type": "timeseries",
       "datasource": {
         "type": "influxdb",
-        "uid": "influxdb3"
+        "uid": "P7206BD2ACDC63FCC"
       },
       "gridPos": {
-        "h": 9,
-        "w": 12,
         "x": 0,
-        "y": 9
+        "y": 5,
+        "w": 12,
+        "h": 8
       },
       "targets": [
         {
           "refId": "A",
-          "query": "SELECT date_bin(INTERVAL '1 minute', time) AS time, AVG(air_quality) AS value FROM environment WHERE $__timeFilter(time) GROUP BY 1 ORDER BY 1",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P7206BD2ACDC63FCC"
+          },
+          "queryType": "sql",
           "rawQuery": true,
+          "rawSql": "SELECT time, co2, pm25 FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time",
+          "query": "SELECT time, co2, pm25 FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time",
           "format": "time_series"
         }
       ],
@@ -111,8 +299,186 @@
         "legend": {
           "displayMode": "list",
           "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
         }
       }
+    },
+    {
+      "id": 7,
+      "title": "Xu hướng nhiệt độ và độ ẩm",
+      "type": "timeseries",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P7206BD2ACDC63FCC"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P7206BD2ACDC63FCC"
+          },
+          "queryType": "sql",
+          "rawQuery": true,
+          "rawSql": "SELECT time, temperature, humidity FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time",
+          "query": "SELECT time, temperature, humidity FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Xu hướng AQI",
+      "type": "timeseries",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P7206BD2ACDC63FCC"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P7206BD2ACDC63FCC"
+          },
+          "queryType": "sql",
+          "rawQuery": true,
+          "rawSql": "SELECT time, air_quality FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time",
+          "query": "SELECT time, air_quality FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Dữ liệu cảm biến RAW gần nhất",
+      "type": "table",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P7206BD2ACDC63FCC"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P7206BD2ACDC63FCC"
+          },
+          "queryType": "sql",
+          "rawQuery": true,
+          "rawSql": "SELECT time, device_id, temperature, humidity, co2, pm25, air_quality, seq FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 100",
+          "query": "SELECT time, device_id, temperature, humidity, co2, pm25, air_quality, seq FROM air_quality_raw WHERE device_id = '${device:raw}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 100",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      }
     }
-  ]
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": [
+    "IoT",
+    "InfluxDB3",
+    "RAW",
+    "CTH619"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "device",
+        "label": "Chọn thiết bị",
+        "type": "query",
+        "datasource": {
+          "type": "influxdb",
+          "uid": "P7206BD2ACDC63FCC"
+        },
+        "definition": "SELECT DISTINCT device_id FROM air_quality_raw ORDER BY device_id",
+        "query": "SELECT DISTINCT device_id FROM air_quality_raw ORDER BY device_id",
+        "refresh": 1,
+        "multi": false,
+        "includeAll": false,
+        "current": {
+          "text": "aq-node-01",
+          "value": "aq-node-01"
+        },
+        "options": []
+      }
+    ]
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "1s",
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m"
+    ]
+  },
+  "timezone": "browser",
+  "title": "IoT Air Quality — RAW Sensor Dashboard",
+  "uid": "cth619_air_quality_raw",
+  "version": 1
 }

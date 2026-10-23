@@ -1,7 +1,7 @@
 apiVersion: 1
 datasources:
   - name: InfluxDB3
-    uid: influxdb3
+    uid: P7206BD2ACDC63FCC
     type: influxdb
     access: proxy
     url: http://influxdb3:8181
